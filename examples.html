@@ -1,0 +1,32 @@
+<html>
+  <head>
+    <script src="https://raw.githubusercontent.com/westc/popup.js/master/popup.js"></script>
+    <script type="text/JavaScript">
+    window.onload = function () {
+      popup({ message: 'Howdy!' });
+    };
+
+    function askAge() {
+      popup({
+        title: 'Age',
+        inputs: [
+          { message: 'How old are you?', required: /^[1-9]\d*$|^0$/, trim: true, id: 'age', error: 'You must enter a positive number.' }
+        ],
+        buttons: ['OK', 'Cancel'],
+        cancel: 1,
+        onDone: function(index, hasTimedOut, inputs) {
+          if (index == 0) {
+            popup({
+              message: "I didn't know you were " + inputs[0] + ' years old.'
+            });
+          }
+        }
+      });
+    }
+    </script>
+  </head>
+  <body>
+
+    <div><button onclick="askAge()">Ask Age</button></div>
+  </body>
+</html>
