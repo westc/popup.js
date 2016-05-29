@@ -74,7 +74,7 @@ popup() argument options:
     `id`, the resulting value will be stored in the property of that name and
     not in the index.
 *******************************************************************************/
-(function(__global, OBJECT, RGX_TRIM_WS, getElemByClassName, hasOwnProp, removeElem, undefined) {
+(function(__global, RGX_TRIM_WS, getElemByClassName, typeOf, hasOwnProp, removeElem, undefined) {
   var document = __global.document,
       body = document.body,
       CLS = 'popup_js';
@@ -245,10 +245,6 @@ popup() argument options:
       }
     });
     return values;
-  }
-
-  function typeOf(obj) {
-    return OBJECT.toString.call(obj).slice(8, -1);
   }
 
   function callValidate(options, opt_buttonIndex, opt_inputIndex) {
@@ -489,9 +485,9 @@ popup() argument options:
   prependChild(document.getElementsByTagName('head')[0] || document.body, styleElem);
 })(
   'undefined' == typeof window ? this : window,
-  {},
   /^[\s\xA0]+|[\s\xA0]+$/g,
   function (ancestorElem, className) { return ancestorElem.getElementsByClassName(className)[0]; },
+  function (obj) { return ({}).toString.call(obj).slice(8, -1); },
   function (owner, propName) { return this.hasOwnProperty.call(owner, propName); },
   function (elem) { elem.parentNode.removeChild(elem); }
 );
