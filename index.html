@@ -9,6 +9,32 @@
     <link rel="stylesheet" type="text/css" href="stylesheets/github-light.css" media="screen">
     <link rel="stylesheet" type="text/css" href="stylesheets/print.css" media="print">
 
+    
+    <script src="https://cdn.rawgit.com/westc/popup.js/master/popup.js"></script>
+    <script type="text/JavaScript">
+    window.onload = function () {
+      popup({ message: 'Howdy!' });
+    };
+
+    function askAge() {
+      popup({
+        title: 'Age',
+        inputs: [
+          { message: 'How old are you?', required: /^[1-9]\d*$|^0$/, trim: true, id: 'age', error: 'You must enter a positive number.' }
+        ],
+        buttons: ['OK', 'Cancel'],
+        cancel: 1,
+        onDone: function(index, hasTimedOut, inputs) {
+          if (index == 0) {
+            popup({
+              message: "I didn't know you were " + inputs[0] + ' years old.'
+            });
+          }
+        }
+      });
+    }
+    </script>
+
     <!--[if lt IE 9]>
     <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
     <![endif]-->
@@ -52,6 +78,14 @@
 <a id="support-or-contact" class="anchor" href="#support-or-contact" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Support or Contact</h3>
 
 <p>Having trouble with Pages? Check out our <a href="https://help.github.com/pages">documentation</a> or <a href="https://github.com/contact">contact support</a> and we’ll help you sort it out.</p>
+
+<h3>
+  <a id="examples" class="anchor" href="#examples" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>
+  Examples
+</h3>
+
+<p><a href="javascript:askAge()">Click here</a> to have you age asked.</p>
+
         </section>
 
         <aside id="sidebar">
