@@ -75,11 +75,16 @@ popup() argument options:
     not in the index.
 *******************************************************************************/
 (function(__global, RGX_TRIM_WS, getElemByClassName, typeOf, hasOwnProp, removeElem, undefined) {
-  var document = __global.document,
-      body = document.body,
-      CLS = 'popup_js';
+  var document,
+      body,
+      CLS = 'popup_js',
+      initNeeded = 1;
 
   function popup(options) {
+    if (initNeeded) {
+      init();
+    }
+
     var newOptions = extend({ done: false }, options),
         overlay = newOptions.$overlay = createOverlay(newOptions),
         container = newOptions.$container = createContainer(newOptions),
@@ -96,6 +101,105 @@ popup() argument options:
       overlay: overlay,
       element: container
     }, options);
+  }
+
+  function init() {
+    initNeeded = 0;
+    document = __global.document;
+    body = document.body;
+
+    // Add default CSS styles for popups:
+    var styleElem = createElem('style', { type: 'text/css' });
+    var cssCode =
+      (''
+        + '&.overlay{'
+          + 'top:0;'
+          + 'left:0;'
+          + 'right:0;'
+          + 'bottom:0;'
+        + '}'
+        + '&.container{'
+          + 'font-family:Verdana,Geneva,sans-serif;'
+          + 'top:50%;'
+          + 'left:50%;'
+          + 'padding:0.375em;'
+          + 'width:auto;'
+        + '}'
+        + '& .content{'
+          + 'padding:0.375em;'
+          + 'width:auto;'
+          + 'overflow:auto;'
+          + 'display:block;'
+        + '}'
+        + '&{'
+          + 'position:fixed;'
+        + '}'
+        + '& .title{'
+          + 'background:#8BF;'
+          + 'border:1px solid #08F;'
+          + 'color:#FFF;'
+          + 'border-radius:0.5em 0.5em 0.25em 0.25em;'
+          + 'padding:0.1em 0.25em;'
+          + 'text-shadow:0 0 1px #000,0 0 3px #000;'
+          + 'margin:2px;'
+          + 'display:block;'
+        + '}'
+        + '& .buttons{'
+          + 'border-top:1px solid #EEE;'
+          + 'text-align:center;'
+          + 'padding:0.375em;'
+        + '}'
+        + '& .dialog_box{'
+          + 'background:#FFF;'
+          + 'border-radius:0.5em;'
+          + 'box-shadow:0 0 2px 1px #000;'
+          + 'width:auto;'
+          + 'min-width:400px;'
+          + 'padding:1px;'
+        + '}'
+        + '& .input .error-indicator{'
+          + 'display:none;'
+        + '}'
+        + '& .input.error .error-indicator{'
+          + 'display:inline-block;'
+          + 'color:#FFF;'
+          + 'background:#F00;'
+          + 'height:1em;'
+          + 'width:1em;'
+          + 'text-align:center;'
+          + 'margin-right:0.25em;'
+          + 'border-radius:0.3em;'
+          + 'font-size:0.8em;'
+          + 'padding:0 0.1em 0.2em;'
+          + 'text-decoration:none;'
+        + '}'
+        + '& .input.error .error-indicator:hover{'
+          + 'background:#800;'
+        + '}'
+        + '& .input .message{'
+          + 'display:block;'
+        + '}'
+        + '& .input .input{'
+          + 'border:1px solid #DDD;'
+          + 'padding:1px;'
+          + 'width:100%;'
+          + 'box-sizing:border-box;'
+        + '}'
+        + '& .input.error .input{'
+          + 'background:#FCC;'
+          + 'border:1px solid #F00;'
+          + 'padding:1px;'
+          + 'width:100%;'
+        + '}'
+      ).replace(/&/g, '.' + CLS);
+    var styleSheet = styleElem.styleSheet;
+    if (styleSheet && !styleElem.sheet) {
+      styleSheet.cssText = cssCode;
+    }
+    else {
+      appendChild(styleElem, document.createTextNode(cssCode));
+    }
+    prependChild(document.getElementsByTagName('head')[0] || body, styleElem);
   }
 
   function createOverlay(options) {
@@ -390,99 +494,6 @@ popup() argument options:
   popup.getPrevious = function() {
     return prevValue;
   };
-
-  // Add default CSS styles for popups:
-  var styleElem = createElem('style', { type: 'text/css' });
-  var cssCode =
-    (''
-      + '&.overlay{'
-        + 'top:0;'
-        + 'left:0;'
-        + 'right:0;'
-        + 'bottom:0;'
-      + '}'
-      + '&.container{'
-        + 'font-family:Verdana,Geneva,sans-serif;'
-        + 'top:50%;'
-        + 'left:50%;'
-        + 'padding:0.375em;'
-        + 'width:auto;'
-      + '}'
-      + '& .content{'
-        + 'padding:0.375em;'
-        + 'width:auto;'
-        + 'overflow:auto;'
-        + 'display:block;'
-      + '}'
-      + '&{'
-        + 'position:fixed;'
-      + '}'
-      + '& .title{'
-        + 'background:#8BF;'
-        + 'border:1px solid #08F;'
-        + 'color:#FFF;'
-        + 'border-radius:0.5em 0.5em 0.25em 0.25em;'
-        + 'padding:0.1em 0.25em;'
-        + 'text-shadow:0 0 1px #000,0 0 3px #000;'
-        + 'margin:2px;'
-        + 'display:block;'
-      + '}'
-      + '& .buttons{'
-        + 'border-top:1px solid #EEE;'
-        + 'text-align:center;'
-        + 'padding:0.375em;'
-      + '}'
-      + '& .dialog_box{'
-        + 'background:#FFF;'
-        + 'border-radius:0.5em;'
-        + 'box-shadow:0 0 2px 1px #000;'
-        + 'width:auto;'
-        + 'min-width:400px;'
-        + 'padding:1px;'
-      + '}'
-      + '& .input .error-indicator{'
-        + 'display:none;'
-      + '}'
-      + '& .input.error .error-indicator{'
-        + 'display:inline-block;'
-        + 'color:#FFF;'
-        + 'background:#F00;'
-        + 'height:1em;'
-        + 'width:1em;'
-        + 'text-align:center;'
-        + 'margin-right:0.25em;'
-        + 'border-radius:0.3em;'
-        + 'font-size:0.8em;'
-        + 'padding:0 0.1em 0.2em;'
-        + 'text-decoration:none;'
-      + '}'
-      + '& .input.error .error-indicator:hover{'
-        + 'background:#800;'
-      + '}'
-      + '& .input .message{'
-        + 'display:block;'
-      + '}'
-      + '& .input .input{'
-        + 'border:1px solid #DDD;'
-        + 'padding:1px;'
-        + 'width:100%;'
-        + 'box-sizing:border-box;'
-      + '}'
-      + '& .input.error .input{'
-        + 'background:#FCC;'
-        + 'border:1px solid #F00;'
-        + 'padding:1px;'
-        + 'width:100%;'
-      + '}'
-    ).replace(/&/g, '.' + CLS);
-  var styleSheet = styleElem.styleSheet;
-  if (styleSheet && !styleElem.sheet) {
-    styleSheet.cssText = cssCode;
-  }
-  else {
-    appendChild(styleElem, document.createTextNode(cssCode));
-  }
-  prependChild(document.getElementsByTagName('head')[0] || document.body, styleElem);
 })(
   'undefined' == typeof window ? this : window,
   /^[\s\xA0]+|[\s\xA0]+$/g,
