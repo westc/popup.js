@@ -63,7 +63,7 @@ popup() argument options:
 - zIndex {number}:
     Optional.  Defaults to the value of `popup.Z_INDEX`.  The z-index for
     the overlay and the popup.
-- onOverlayClick {function(Prompt)}:
+- onOverlayClick {function(DOMEvent, Prompt)}:
     Optional.  This function will be called whenever the overlay is clicked.
 - timeout {number}:
     Optional.  If specified this will be used as the maximum amount of
@@ -85,18 +85,33 @@ popup() argument options:
       init();
     }
 
-    var newOptions = extend({ done: false }, options),
-        overlay = newOptions.$overlay = createOverlay(newOptions),
-        container = newOptions.$container = createContainer(newOptions),
-        timeout = options.timeout;
+    try {
+      var newOptions = extend({ done: false }, options),
+          overlay = newOptions.$overlay = createOverlay(newOptions),
+          container = newOptions.$container = createContainer(newOptions),
+          timeout = options.timeout,
+          onOverlayClick = options.onOverlayClick,
+          promptObject;
+    }
+    catch (e) {
+        removeElem(overlay);
+      throw e;
+    }
+
+    if (onOverlayClick) {
+      overlay.onclick = function(e) {
+        onOverlayClick.call(promptObject, e, promptObject);
+      };
+    }
+
     if (timeout) {
       setTimeout(function() {
         callDoneAndTerminate(undefined, true, newOptions);
       }, timeout);
     }
-    return newOptions._ = extend({
-      close: function(index) {
-        callDoneAndTerminate(index, undefined, newOptions);
+    return promptObject = newOptions._ = extend({
+      close: function() {
+        removeAllElems();
       },
       overlay: overlay,
       element: container
@@ -172,6 +187,7 @@ popup() argument options:
           + 'font-size:0.8em;'
           + 'padding:0 0.1em 0.2em;'
           + 'text-decoration:none;'
+          + 'cursor:pointer;'
         + '}'
         + '& .input.error .error-indicator:hover{'
           + 'background:#800;'
@@ -211,98 +227,108 @@ popup() argument options:
   }
 
   function createContainer(options) {
-    var container = addToDoc(createElem('div', { className: CLS + ' container' }, {
-      zIndex: options.zIndex || popup.Z_INDEX
-    }), options);
-    var title = options.title;
-    var buttons = options.buttons;
-    var message = options.message;
-    var inputs = options.inputs;
-    var inputElems = options.$inputs = [];
-    var inputWraps = options.$wraps = [];
-    buttons = buttons && buttons[0] ? buttons : popup.BUTTONS;
-    container.innerHTML
-      = '<div class="dialog_box">'
-        + (title ? '<div class="title"></div>' : '')
-        + '<div class="content"></div>'
-        + '<div class="buttons"></div>'
-      + '</div>';
+    try {
+      var container = addToDoc(createElem('div', { className: CLS + ' container' }, {
+        zIndex: options.zIndex || popup.Z_INDEX
+      }), options);
+      var title = options.title;
+      var buttons = options.buttons;
+      var message = options.message;
+      var inputs = options.inputs;
+      var inputElems = options.$inputs = [];
+      var inputWraps = options.$wraps = [];
+      buttons = buttons && buttons[0] ? buttons : popup.BUTTONS;
+      container.innerHTML
+        = '<div class="dialog_box">'
+          + (title ? '<div class="title"></div>' : '')
+          + '<div class="content"></div>'
+          + '<div class="buttons"></div>'
+        + '</div>';
 
-    if (title) {
-      setElemText(getElemByClassName(container, 'title'), title);
-    }
+      if (title) {
+        setElemText(getElemByClassName(container, 'title'), title);
+      }
 
-    var buttonsElem = getElemByClassName(container, 'buttons');
-    forEach(buttons, function(button, i) {
-      appendChild(buttonsElem, setElemText(createElem('button', { onclick: function() {
-        callDoneAndTerminate(i, false, options);
-      } }), button));
-    });
-
-    var contentElem = getElemByClassName(container, 'content');
-    contentElem.style.maxHeight = Math.max(document.documentElement.clientHeight, window.innerHeight || 0) - container.offsetHeight - 50;
-    if (message) {
-      setElemText(contentElem, message);
-    }
-    else if (inputs) {
-      forEach(inputs, function(input, inputIndex) {
-        var id = uid('input'),
-            inputWrap = createElem('div', { className: 'input' }),
-            inputType = input.type,
-            strInputValue = toSimpleString(input.value),
-            inputOptions = input.options,
-            typeMatch = /^(?:(TEXT)|(TEXTAREA)(?::([1-9]\d*))?|((MULTI-)?SELECT)(?::([1-9]\d*))?)$/i.exec(inputType || 'TEXT') || [],
-            inputElem
-              = typeMatch[1]
-                ? createElem('input', { type: 'text', value: strInputValue })
-                : typeMatch[2]
-                  ? createElem('textarea', { rows: typeMatch[3] || 3, value: strInputValue })
-                  : typeMatch[4]
-                    ? createElem('select', { size: typeMatch[6] || 1, multiple: typeMatch[5] || "" })
-                    : undefined;
-        if (!inputElem) {
-          throw new Error('"' + inputType + '" is an invalid popup input type.');
-        }
-        if (typeMatch[4]) {
-          if (!inputOptions) {
-            throw new Error('Options must be given for popup inputs of type "' + inputType + '".')
-          }
-          forEach(inputOptions, function(option) {
-            appendChild(
-              inputElem,
-              setElemText(
-                createElem('option', { value: option.value, selected: option.selected || false }),
-                hasOwnProp(option, 'text') ? option.text : option.value
-              )
-            );
-          });
-        }
-        inputWraps.push(inputWrap);
-        appendChild(
-          inputWrap,
-          prependChild(
-            setElemText(createElem('label', { className: 'message', htmlFor: id }), input.message),
-            setElemText(createElem('a', { className: 'error-indicator', href: 'javascript://', tabIndex: -1 }), '!')
-          )
-        );
-        inputElems.push(extend(inputElem, {
-          className: 'input',
-          id: id,
-          onblur: function() {
-            callValidate(options, undefined, inputIndex);
-          }
-        }));
-        appendChild(inputWrap, inputElem);
-        appendChild(contentElem, inputWrap);
+      var buttonsElem = getElemByClassName(container, 'buttons');
+      forEach(buttons, function(button, i) {
+        appendChild(buttonsElem, setElemText(createElem('button', { onclick: function() {
+          callDoneAndTerminate(i, false, options);
+        } }), button));
       });
+
+      var contentElem = getElemByClassName(container, 'content');
+      contentElem.style.maxHeight = Math.max(document.documentElement.clientHeight, window.innerHeight || 0) - container.offsetHeight - 50;
+      if (message) {
+        setElemText(contentElem, message);
+      }
+      else if (inputs) {
+        forEach(inputs, function(input, inputIndex) {
+          var id = uid('input'),
+              inputWrap = createElem('div', { className: 'input' }),
+              inputType = input.type,
+              strInputValue = toSimpleString(input.value),
+              inputOptions = input.options,
+              typeMatch = /^(?:(TEXT)|(TEXTAREA)(?::([1-9]\d*))?|((MULTI-)?SELECT)(?::([1-9]\d*))?)$/i.exec(inputType || 'TEXT') || [],
+              inputElem
+                = typeMatch[1]
+                  ? createElem('input', { type: 'text', value: strInputValue })
+                  : typeMatch[2]
+                    ? createElem('textarea', { rows: typeMatch[3] || 3, value: strInputValue })
+                    : typeMatch[4]
+                      ? createElem('select', { size: typeMatch[6] || 1, multiple: typeMatch[5] || "" })
+                      : undefined;
+          if (!inputElem) {
+            throw new Error('"' + inputType + '" is an invalid popup input type.');
+          }
+          if (typeMatch[4]) {
+            if (!inputOptions) {
+              throw new Error('Options must be given for popup inputs of type "' + inputType + '".')
+            }
+            forEach(inputOptions, function(option) {
+              if (typeof option == 'string') {
+                option = { value: option };
+              }
+              appendChild(
+                inputElem,
+                setElemText(
+                  createElem('option', { value: option.value, selected: option.selected || false }),
+                  hasOwnProp(option, 'text') ? option.text : option.value
+                )
+              );
+            });
+          }
+          inputWraps.push(inputWrap);
+          appendChild(
+            inputWrap,
+            prependChild(
+              setElemText(createElem('label', { className: 'message', htmlFor: id }), input.message),
+              setElemText(createElem('a', { className: 'error-indicator', tabIndex: -1 }), '!')
+            )
+          );
+          inputElems.push(extend(inputElem, {
+            className: 'input',
+            id: id,
+            onblur: function() {
+              callValidate(options, undefined, inputIndex);
+            }
+          }));
+          appendChild(inputWrap, inputElem);
+          appendChild(contentElem, inputWrap);
+        });
+      }
+
+      extend(container.style, {
+        marginTop: -container.offsetHeight / 2 + 'px',
+        marginLeft: -container.offsetWidth / 2 + 'px'
+      });
+      return container;
     }
-
-    extend(container.style, {
-      marginTop: -container.offsetHeight / 2 + 'px',
-      marginLeft: -container.offsetWidth / 2 + 'px'
-    });
-
-    return container;
+    catch (e) {
+      try {
+        removeElem(container);
+      } catch (e2) {}
+      throw e;
+    }
   }
 
   function forEach(array, callback) {
@@ -340,7 +366,17 @@ popup() argument options:
   function getInputValues(options) {
     var val, id, values = {}, inputs = options.inputs;
     forEach(options.$inputs, function(inputElem, i) {
-      val = inputElem.value;
+      if (inputElem.nodeName.toUpperCase() == 'SELECT' && inputElem.multiple) {
+        val = [];
+        forEach(inputElem.options, function(optionElem) {
+          if (optionElem.selected) {
+            val.push(optionElem.value);
+          }
+        });
+      }
+      else {
+        val = inputElem.value;
+      }
       if (!options.unindex) {
         values[i] = val;
       }
@@ -381,15 +417,14 @@ popup() argument options:
 
       // Validate the value if possible.
       if (validate) {
-        inputElem.value = toSimpleString(validate.call(options._, value, i, opt_buttonIndex, function(error) {
+        inputElem.value = validate.call(options._, value, i, opt_buttonIndex, function(error) {
           if (errorFound = !!error) {
             errMsg = error === true ? input.error || popup.ERROR : error;
           }
-        }));
+        });
         if (errorFound) {
           invalid = errorFound;
           extend(getElemByClassName(inputWrap, 'error-indicator'), {
-            onclick: function() { alert(errMsg); },
             title: errMsg
           });
         }
@@ -406,6 +441,11 @@ popup() argument options:
     return !invalid;
   }
 
+  function removeAllElems(options) {
+    removeElem(options.$overlay);
+    removeElem(options.$container);
+  }
+
   function callDoneAndTerminate(index, hasTimedOut, options) {
     if (!options.done) {
       options.done = true;
@@ -415,21 +455,20 @@ popup() argument options:
           onDone = options.onDone;
       // If it has timed out or if it has been closed by user code or if it was
       // finished without errors...
-      if (hasTimedOut != false || valid) {
-        removeElem(options.$overlay);
-        removeElem(options.$container);
+      if (hasTimedOut || valid) {
+        removeAllElems(options);
+
+        // If an onDone event handler was defined...
+        if (onDone) {
+          var args = [index, hasTimedOut];
+          if (!options.message && options.inputs) {
+            args.push(getInputValues(options));
+          }
+          onDone.apply(options._, args);
+        }
       }
       else {
         options.done = false;
-      }
-      // If it was finished without errors or it was closed by code and an onDone
-      // event handler was defined...
-      if ((valid || hasTimedOut == undefined) && onDone) {
-        var args = [index, hasTimedOut];
-        if (!options.message && options.inputs) {
-          args.push(getInputValues(options));
-        }
-        onDone.apply(options._, args);
       }
     }
   }
