@@ -3,7 +3,7 @@
     <script src="popup.js"></script>
     <script type="text/JavaScript">
     window.onload = function () {
-      popup({ message: 'Howdy!' });
+      popup({ message: 'Howdy!', timeout: 3000 });
     };
 
     function askAge() {
@@ -23,10 +23,37 @@
         }
       });
     }
+
+    function askGender() {
+      popup({
+        title: 'Gender',
+        inputs: [
+          {
+            message: 'What is your gender?',
+            type: 'select:2',
+            options: ['Male', 'Female'],
+            required: true
+          }
+        ],
+        buttons: ['Submit', 'Cancel'],
+        cancel: 1,
+        onOverlayClick: function() {
+          this.close();
+        },
+        onDone: function(index, hasTimedOut, inputs) {
+          if (index == 0) {
+            popup({ message: inputs[0] });
+          }
+          else if (hasTimedOut) {
+            popup({ message: 'Sorry, you took too long!' });
+          }
+        }
+      });
+    }
     </script>
   </head>
   <body>
-
     <div><button onclick="askAge()">Ask Age</button></div>
+    <div><button onclick="askGender()">Ask Gender</button></div>
   </body>
 </html>
