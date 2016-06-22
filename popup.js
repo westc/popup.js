@@ -133,12 +133,21 @@ popup() argument options:
           + 'right:0;'
           + 'bottom:0;'
         + '}'
-        + '&.container{'
+        + '&.container-wrap{'
           + 'font-family:Verdana,Geneva,sans-serif;'
-          + 'top:50%;'
-          + 'left:50%;'
-          + 'padding:0.375em;'
-          + 'width:auto;'
+          + 'position:fixed;'
+          + 'top:0;'
+          + 'left:0;'
+          + 'right:0;'
+          + 'bottom:0;'
+          + 'width:100%;'
+          + 'height:100%;'
+        + '}'
+        + '& .container{'
+          + 'vertical-align:middle;'
+          + 'text-align:center;'
+          + 'width:100%;'
+          + 'height:100%;'
         + '}'
         + '& .content{'
           + 'padding:0.375em;'
@@ -168,9 +177,8 @@ popup() argument options:
           + 'background:#FFF;'
           + 'border-radius:0.5em;'
           + 'box-shadow:0 0 2px 1px #000;'
-          + 'width:auto;'
-          + 'min-width:400px;'
           + 'padding:1px;'
+          + 'display:inline-block;'
         + '}'
         + '& .input .error-indicator{'
           + 'display:none;'
@@ -228,22 +236,28 @@ popup() argument options:
 
   function createContainer(options) {
     try {
-      var container = addToDoc(createElem('div', { className: CLS + ' container' }, {
-        zIndex: options.zIndex || popup.Z_INDEX
-      }), options);
       var title = options.title;
+      var containerWrap = addToDoc(createElem('div', {
+        innerHTML: ''
+          + '<table border=0 cellpadding=0 cellspacing=0 class="' + CLS + ' container-wrap" style="z-index:' + (options.zIndex || popup.Z_INDEX) + '">'
+            + '<tr>'
+              + '<td class="container">'
+                + '<div class="dialog_box">'
+                  + (title ? '<div class="title"></div>' : '')
+                  + '<div class="content"></div>'
+                  + '<div class="buttons"></div>'
+                + '</div>'
+              + '</td>'
+            + '</tr>'
+          + '</table>'
+      }).childNodes[0], options);
+      var container = containerWrap.rows[0].cells[0];
       var buttons = options.buttons;
       var message = options.message;
       var inputs = options.inputs;
       var inputElems = options.$inputs = [];
       var inputWraps = options.$wraps = [];
       buttons = buttons && buttons[0] ? buttons : popup.BUTTONS;
-      container.innerHTML
-        = '<div class="dialog_box">'
-          + (title ? '<div class="title"></div>' : '')
-          + '<div class="content"></div>'
-          + '<div class="buttons"></div>'
-        + '</div>';
 
       if (title) {
         setElemText(getElemByClassName(container, 'title'), title);
@@ -317,15 +331,11 @@ popup() argument options:
         });
       }
 
-      extend(container.style, {
-        marginTop: -container.offsetHeight / 2 + 'px',
-        marginLeft: -container.offsetWidth / 2 + 'px'
-      });
-      return container;
+      return containerWrap;
     }
     catch (e) {
       try {
-        removeElem(container);
+        removeElem(containerWrap);
       } catch (e2) {}
       throw e;
     }
